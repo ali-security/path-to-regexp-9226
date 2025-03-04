@@ -72,20 +72,24 @@ function pathToRegexp(path, keys, options) {
   path = path.replace(
     /\\.|(\/)?(\.)?:(\w+)(\(.*?\))?(\*)?(\?)?|[.*]|\/\(/g,
     function (match, slash, format, key, capture, star, optional, offset) {
-      pos = offset + match.length;
-
       if (match[0] === '\\') {
         backtrack += match;
+        pos += 2;
         return match;
       }
 
       if (match === '.') {
         backtrack += '\\.';
         extraOffset += 1;
+        pos += 1;
         return '\\.';
       }
 
-      backtrack = slash || format ? '' : path.slice(pos, offset);
+      if (slash || format) {
+        backtrack = '';
+      } else {
+        backtrack += path.slice(pos, offset);
+      }
 
       if (match === '*') {
         extraOffset += 3;
@@ -102,7 +106,7 @@ function pathToRegexp(path, keys, options) {
       format = format ? '\\.' : '';
       optional = optional || '';
       capture = capture ?
-        capture.replace(/\\.|\*/, function (m) { return m === '*' ? '(.*)' : m; }) :
+        capture.replace(/\\.|\*/g, function (m) { return m === '*' ? '(.*)' : m; }) :
         (backtrack ? '((?:(?!/|' + backtrack + ').)+?)' : '([^/' + format + ']+?)');
 
       keys.push({
